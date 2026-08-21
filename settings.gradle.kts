@@ -29,4 +29,6 @@ dependencyResolutionManagement {
     }
 }
 
-include(":fingerprint-spoofer:app", ":network-interceptor:app")
+include(":fingerprint-spoofer")
+include(":network-interceptor")
+rootProject.name = "attacks"
