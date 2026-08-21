@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../external/lsplant" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../external/lsplant/docs/doxygen-awesome-css" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../external/lsplant/lsplant/src/main/jni/external/dex_builder" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../external/lsplant/lsplant/src/main/jni/external/dex_builder/external/parallel_hashmap" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../external/xz-embedded" vcs="Git" />
+  </component>
+</project>
