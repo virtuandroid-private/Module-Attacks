@@ -25,7 +25,6 @@ To speed up development there are VirtualXposed-specific Gradle tasks which inst
 
 ```sh
 ./gradlew network-interceptor:installToXposed
-./gradlew fingerprint-spoofer:installToXposed
 ```
 
 **NOTE:** VirtualXposed does not always refresh the modules after installation, it is recommended to force restart the VirtualXposed app after installation.
@@ -34,7 +33,7 @@ To speed up development there are VirtualXposed-specific Gradle tasks which inst
 
 ### Modules
 
-There are currently two modules: **Fingerprint spoofer** and **Network interceptor**.
+There are currently three modules: 
 
 #### Fingerprint spoofer
 
@@ -46,3 +45,9 @@ It hooks the `android.os.Build` class to override static fields such as `Build.F
 This module demonstrates how the virtualization framework can be used to intercept and modify network traffic.
 In the demo module we intercept all OkHttp traffic and redirect network calls from the domain example.com to a malicious document.
 
+#### File spoofer
+
+This module demonstrates how the virtualization framework can redirect file access. 
+This is accomplished by hooking the File constructor. 
+It is not sufficient to hook *all* file usage, but sufficient to demonstrate a proof of concept.
+More sophisticated file redirection can be achieved using the existing VirtualXposed [NativeEngine](https://github.com/virtuandroid-private/VirtualXposed-private/blob/master/lib/src/main/java/com/lody/virtual/client/NativeEngine.java).
