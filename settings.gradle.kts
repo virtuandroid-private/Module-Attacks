@@ -32,4 +32,5 @@ dependencyResolutionManagement {
 include(":fingerprint-spoofer")
 include(":file-spoofer")
 include(":network-interceptor")
+include(":guest-attacker")
 rootProject.name = "attacks"
