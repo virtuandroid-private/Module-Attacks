@@ -1,10 +1,9 @@
 package com.virtualxposed.guestattacker
 
-import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
-import com.virtualxposed.guestattacker.StorageBypass.victimApp
+import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
 import kotlinx.coroutines.delay
@@ -15,7 +14,7 @@ object Interference {
         val activityManager =
             context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val victimProcesses =
-            activityManager.runningAppProcesses.filter { it.processName == victimApp }
+            activityManager.runningAppProcesses.filter { it.processName == VICTIM_APP }
 
         if (victimProcesses.isEmpty()) {
             toast(context, "No victim process")
@@ -31,7 +30,7 @@ object Interference {
         delay(100.milliseconds)
 
         val newVictimProcesses =
-            activityManager.runningAppProcesses.filter { it.processName == victimApp }
+            activityManager.runningAppProcesses.filter { it.processName == VICTIM_APP }
 
         if (newVictimProcesses.size < victimProcesses.size) {
             val difference = victimProcesses.size - newVictimProcesses.size
