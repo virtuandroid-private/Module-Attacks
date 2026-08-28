@@ -3,13 +3,13 @@ package com.virtualxposed.guestattacker
 import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
-import androidx.annotation.UiThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.lang.reflect.Field
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.readSymbolicLink
 
@@ -71,6 +71,21 @@ object Utils {
         } catch (e: Exception) {
             e.printStackTrace()
             "Error executing command: ${e.message}"
+        }
+    }
+
+    @SuppressLint("DiscouragedPrivateApi")
+    /** Call this before other methods on the throwable, otherwise it will be null! */
+    fun getBacktrace(throwable: Throwable): List<Class<*>>? {
+        return try {
+            val field: Field = Throwable::class.java.getDeclaredField("backtrace")
+            field.isAccessible = true
+
+            val backtrace = field.get(throwable) as? Array<Any>
+            backtrace?.filterIsInstance<Class<*>>()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 }

