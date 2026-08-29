@@ -117,7 +117,8 @@ class MainActivity : ComponentActivity() {
 
                         DemoAction(
                             "Shared file provider",
-                            "This app shares the same underlying context as the victim app. Therefore this app can use the private file providers from the victim app.",
+                            "This app shares the same underlying context as the victim app. " +
+                                    "Therefore this app can use the private file providers from the victim app ",
                             DemoCategory.SharedContext
                         ) {
                             val uri =
@@ -166,6 +167,15 @@ class MainActivity : ComponentActivity() {
                             }.onFailure {
                                 toast(this, "Unexpected failure")
                             }
+                        },
+                        DemoAction(
+                            "IPC verification bypass",
+                            "VirtualXposed only performs IPC verification within the app, not in the core process. " +
+                                    "This makes it possible to bind to other apps private services by manually sending the bindService call to VActivityManagerService. " +
+                                    "In-app sandbox escape required ",
+                            DemoCategory.IPC
+                        ) {
+                            IPC.messageVictimApp(this)
                         }
                     )
                 )
@@ -174,13 +184,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 enum class DemoCategory(val categoryName: String) {
     IO("Improper storage isolation"),
     MissingHook("Missing hook abuse"),
     Interference("Cross-app interference"),
     SharedProcess("Shared process vulnerabilities"),
     SharedContext("Shared context vulnerabilities"),
+    IPC("IPC vulnerabilities"),
 }
 
 data class DemoAction(
