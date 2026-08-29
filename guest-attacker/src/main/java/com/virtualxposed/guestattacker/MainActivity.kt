@@ -169,10 +169,8 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         DemoAction(
-                            "IPC verification bypass",
-                            "VirtualXposed only performs IPC verification within the app, not in the core process. " +
-                                    "This makes it possible to bind to other apps private services by manually sending the bindService call to VActivityManagerService. " +
-                                    "In-app sandbox escape required ",
+                            "Missing IPC verification",
+                            "There are no safeguards against binding to non-exported IPC services. This makes it possible to bind to the private victim service.",
                             DemoCategory.IPC
                         ) {
                             IPC.messageVictimApp(this)

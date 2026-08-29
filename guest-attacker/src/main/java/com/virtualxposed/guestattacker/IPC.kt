@@ -9,7 +9,6 @@ import android.content.ServiceConnection
 import android.os.Handler
 import android.os.IBinder
 import android.os.IInterface
-import com.lody.virtual.server.IBinderDelegateService
 import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
@@ -43,8 +42,8 @@ object IPC {
             override fun onServiceConnected(
                 name: ComponentName?, service: IBinder?
             ) {
-                val serviceBinder = IBinderDelegateService.Stub.asInterface(service).service
-                privateService = IPrivateService.Stub.asInterface(serviceBinder)
+//                val serviceBinder = IBinderDelegateService.Stub.asInterface(service).service
+                privateService = IPrivateService.Stub.asInterface(service)
                 sendMessage(context)
             }
 
@@ -60,14 +59,14 @@ object IPC {
                 log("No iServiceConnection")
                 return
             }
-            bindServiceExact(
+            bindServiceIntended(
                 context, intent, iServiceConnection, BIND_AUTO_CREATE, 0
             )
         }
     }
 
 
-    fun bindServiceExact(
+    private fun bindServiceRaw(
         context: Context,
         intent: Intent,
         iServiceConnection: Any,
@@ -125,7 +124,7 @@ object IPC {
     }
 
     @SuppressLint("SoonBlockedPrivateApi")
-    fun getIServiceConnection(
+    private fun getIServiceConnection(
         context: Context, connection: ServiceConnection, flags: Long
     ): Any? {
         return try {
@@ -163,4 +162,64 @@ object IPC {
         }
     }
 
+    private fun bindServiceIntended(
+        context: Context,
+        intent: Intent,
+        iServiceConnection: Any,
+        flags: Int,
+        userId: Int = 0
+    ): Int {
+        return try {
+            val amClass = Class.forName("android.app.ActivityManager")
+
+            val getServiceMethod =
+                amClass.getDeclaredMethod("getService").apply { isAccessible = true }
+            val iActivityManager = getServiceMethod.invoke(null)
+
+            val activityThreadClass = Class.forName("android.app.ActivityThread")
+            val currentActivityThreadMethod =
+                activityThreadClass.getDeclaredMethod("currentActivityThread")
+            val currentActivityThread = currentActivityThreadMethod.invoke(null)
+
+            val getApplicationThreadMethod =
+                activityThreadClass.getDeclaredMethod("getApplicationThread")
+            val applicationThread = getApplicationThreadMethod.invoke(currentActivityThread)
+
+            val iApplicationThreadClass = Class.forName("android.app.IApplicationThread")
+            val iServiceConnectionClass = Class.forName("android.app.IServiceConnection")
+
+            val bindServiceMethod = iActivityManager.javaClass.getMethod(
+                "bindService",
+                iApplicationThreadClass,
+                IBinder::class.java,
+                Intent::class.java,
+                String::class.java,
+                iServiceConnectionClass,
+                Long::class.javaPrimitiveType,
+                String::class.java,
+                Int::class.javaPrimitiveType
+            )
+
+            val resolvedType = intent.resolveTypeIfNeeded(context.contentResolver)
+            val packageName = context.packageName
+
+            val result = bindServiceMethod.invoke(
+                iActivityManager,
+                applicationThread,
+                null,
+                intent,
+                resolvedType,
+                iServiceConnection,
+                flags.toLong(),
+                packageName,
+                userId
+            )
+
+            result as Int
+        } catch (e: Exception) {
+            e.printStackTrace()
+            -1
+        }
+    }
 }
+
