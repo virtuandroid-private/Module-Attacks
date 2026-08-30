@@ -1,9 +1,6 @@
 @file:JvmName("XposedModule") // Prevent kotlin from renaming the file
 package com.virtualxposed.fingerprintspoofer
 
-import android.app.Application
-import android.content.Context
-import android.os.Build
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -13,6 +10,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 class XposedModule : IXposedHookLoadPackage {
     companion object {
         private const val TAG = "FingerprintSpoofer"
+        const val VICTIM_APP = "com.virtualxposed.victim"
 
         private fun log(message: String) {
             XposedBridge.log("$TAG: $message")
@@ -20,9 +18,26 @@ class XposedModule : IXposedHookLoadPackage {
     }
 
     override fun handleLoadPackage(params: XC_LoadPackage.LoadPackageParam?) {
-        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
+        if (params?.packageName == BuildConfig.APPLICATION_ID) {
+            log("Self-loaded module with version ${BuildConfig.VERSION_NAME}")
+            val buildClass = XposedHelpers.findClass(
+                MainActivity::class.java.name,
+                params.classLoader
+            )
 
-        if (params == null) return
+            XposedHelpers.setStaticObjectField(
+                buildClass,
+                MainActivity::isLoaded.name,
+                true
+            )
+            return
+        }
+        if (params?.packageName != VICTIM_APP) {
+            log("Not loading module $TAG since ${params?.packageName} is not $VICTIM_APP")
+            return
+        }
+
+        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
 
         hookFingerprint(params)
     }

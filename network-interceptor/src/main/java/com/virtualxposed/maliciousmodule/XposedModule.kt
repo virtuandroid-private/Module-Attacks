@@ -17,6 +17,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 class XposedModule : IXposedHookLoadPackage {
     companion object {
         private const val TAG = "NetworkHook"
+        const val VICTIM_APP = "com.virtualxposed.victim"
 
         private fun log(message: String) {
             XposedBridge.log("$TAG: $message")
@@ -38,6 +39,25 @@ class XposedModule : IXposedHookLoadPackage {
     }
 
     override fun handleLoadPackage(params: XC_LoadPackage.LoadPackageParam?) {
+        if (params?.packageName == BuildConfig.APPLICATION_ID) {
+            log("Self-loaded module with version ${BuildConfig.VERSION_NAME}")
+            val buildClass = XposedHelpers.findClass(
+                MainActivity::class.java.name,
+                params.classLoader
+            )
+
+            XposedHelpers.setStaticObjectField(
+                buildClass,
+                MainActivity::isLoaded.name,
+                true
+            )
+            return
+        }
+        if (params?.packageName != VICTIM_APP) {
+            log("Not loading module $TAG since ${params?.packageName} is not $VICTIM_APP")
+            return
+        }
+
         log("Loaded malicious module version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
 
         if (params == null) return
