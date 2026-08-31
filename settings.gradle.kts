@@ -33,4 +33,6 @@ include(":fingerprint-spoofer")
 include(":file-spoofer")
 include(":network-interceptor")
 include(":guest-attacker")
+include(":dynamic-code-loader")
+include(":dynamic-code-library")
 rootProject.name = "attacks"
