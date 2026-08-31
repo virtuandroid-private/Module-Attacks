@@ -75,9 +75,8 @@ fun StartScreen(isLoaded: Boolean, modifier: Modifier = Modifier) {
         }
         Button(onClick = {
             CoroutineScope(Dispatchers.IO).launch {
-                val helper = ExecuteHelper(context)
-                helper.init()
-                helper.executeAndroidLibrary(context)
+                val file = ExecuteHelper.getAssetFile(context) ?: return@launch
+                ExecuteHelper.executeAndroidLibrary(context, file)
             }
         }) {
             Text("Execute")

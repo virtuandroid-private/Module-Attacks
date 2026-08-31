@@ -3,27 +3,47 @@ package com.virtualxposed.codeloader
 import android.content.Context
 import java.io.File
 import dalvik.system.DexClassLoader
+import java.util.zip.ZipFile
 
-class ExecuteHelper(val context: Context) {
-    private var apkFile: File? = null
-    private val apkFileName = "dynamic.apk"
+object ExecuteHelper {
+    const val APK_FILE_NAME = "dynamic.apk"
 
-    fun init() {
-        if (apkFile == null) {
-            val apkFile = File(context.cacheDir, apkFileName)
-            apkFile.setWritable(true)
-            context.assets.open(apkFileName).copyTo(apkFile.outputStream())
-            apkFile.setReadOnly() // New Android security policy
-            this.apkFile = apkFile
+    fun getAssetFile(context: Context): File? {
+        val apkFile = File(context.cacheDir, APK_FILE_NAME)
+        apkFile.setWritable(true)
+        if (context.packageName == BuildConfig.APPLICATION_ID) {
+            apkFile.parentFile?.mkdirs()
+            context.assets.open(APK_FILE_NAME).copyTo(apkFile.outputStream())
+        } else {
+            val packages =
+                context.packageManager.getInstalledApplications(0)
+
+            val app = packages.firstOrNull { app ->
+                app.packageName == BuildConfig.APPLICATION_ID
+            } ?: return null
+
+            val apk = File(app.sourceDir)
+
+            ZipFile(apk).use { zip ->
+                val entry = zip.getEntry("assets/${APK_FILE_NAME}")
+
+                if (entry != null) {
+                    zip.getInputStream(entry).use { input ->
+                        input.copyTo(apkFile.outputStream())
+                    }
+                }
+            }
         }
+
+        apkFile.setReadOnly() // New Android security policy
+        return apkFile
     }
 
-    fun executeAndroidLibrary(context: Context) {
-        val apkFile = this.apkFile ?: return
+    fun executeAndroidLibrary(context: Context, file: File) {
         val optimizedDexOutputDir = context.codeCacheDir
 
         val classLoader = DexClassLoader(
-            apkFile.absolutePath,
+            file.absolutePath,
             optimizedDexOutputDir.absolutePath,
             null,
             context.classLoader

