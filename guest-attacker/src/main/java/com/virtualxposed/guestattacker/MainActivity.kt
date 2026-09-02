@@ -7,29 +7,46 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -41,6 +58,11 @@ import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.virtualxposed.guestattacker.StorageBypass.EXPECTED_FILE_RESULTS
+import com.virtualxposed.guestattacker.ui.theme.Green
+import com.virtualxposed.guestattacker.ui.theme.Red
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -86,9 +108,7 @@ class MainActivity : ComponentActivity() {
                             "Interfere with other apps by killing them. This kills the victim app",
                             DemoCategory.Interference,
                         ) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                Interference.killVictim(this@MainActivity)
-                            }
+                            Interference.killVictim(this@MainActivity)
                         },
 
                         DemoAction(
@@ -105,7 +125,7 @@ class MainActivity : ComponentActivity() {
                             }
                             if (hostApp == null) {
                                 toast(this, "Failed to find host process.")
-                                return@DemoAction
+                                return@DemoAction false
                             }
 
                             val result =
@@ -114,6 +134,7 @@ class MainActivity : ComponentActivity() {
                                 this,
                                 "Private file results: $result",
                             )
+                            result == EXPECTED_FILE_RESULTS
                         },
 
                         DemoAction(
@@ -134,11 +155,13 @@ class MainActivity : ComponentActivity() {
                                     this,
                                     "Unable to read from the file provider",
                                 )
+                                return@DemoAction false
                             } else {
                                 toast(
                                     this,
                                     "Private file results: $result",
                                 )
+                                return@DemoAction result == EXPECTED_FILE_RESULTS
                             }
                         },
                         DemoAction(
@@ -165,9 +188,11 @@ class MainActivity : ComponentActivity() {
                                     this,
                                     "Private file results: $result",
                                 )
+                                return@DemoAction result == EXPECTED_FILE_RESULTS
                             }.onFailure {
                                 toast(this, "Unexpected failure")
                             }
+                            false
                         },
                         DemoAction(
                             "Missing IPC verification",
@@ -175,6 +200,7 @@ class MainActivity : ComponentActivity() {
                             DemoCategory.IPC
                         ) {
                             IPC.messageVictimApp(this)
+                            true
                         }, DemoAction(
                             "Bypass receiver verification",
                             "VirtualXposed registers all receivers as exported static broadcast receivers, with no caller verification. " +
@@ -191,7 +217,12 @@ class MainActivity : ComponentActivity() {
                                 })
                                 putExtra("_VA_|_user_id_", 0)
                             }
-                            this.sendBroadcast(intent)
+                            try {
+                                this.sendBroadcast(intent)
+                                return@DemoAction true
+                            } catch (_: Throwable) {
+                                return@DemoAction false
+                            }
                         }
                     )
                 )
@@ -213,13 +244,12 @@ data class DemoAction(
     val title: String,
     val description: String,
     val category: DemoCategory,
-    val onExecute: () -> Unit
+    val onExecute: suspend () -> Boolean
 )
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DemoScreen(actions: List<DemoAction>) {
-    // Group actions by category name
     val groupedActions = remember(actions) {
         actions.groupBy { it.category }
     }
@@ -229,10 +259,13 @@ fun DemoScreen(actions: List<DemoAction>) {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Guest Attacks Demo", style = MaterialTheme.typography.headlineMedium
+                        text = "Guest Attacks Demo",
+                        style = MaterialTheme.typography.headlineMedium
                     )
-                })
-        }) { innerPadding ->
+                }
+            )
+        }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -242,13 +275,14 @@ fun DemoScreen(actions: List<DemoAction>) {
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             groupedActions.forEach { (categoryName, categoryActions) ->
-                // Sticky header for each category section
                 stickyHeader(key = categoryName) {
                     CategoryHeader(title = categoryName.categoryName)
                 }
 
                 items(
-                    items = categoryActions, key = { "${it.category}_${it.title}" }) { action ->
+                    items = categoryActions,
+                    key = { "${it.category}_${it.title}" }
+                ) { action ->
                     DemoRow(action = action)
                 }
             }
@@ -258,10 +292,12 @@ fun DemoScreen(actions: List<DemoAction>) {
 
 @Composable
 fun CategoryHeader(
-    title: String, modifier: Modifier = Modifier
+    title: String,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Text(
             text = title,
@@ -275,40 +311,97 @@ fun CategoryHeader(
 
 @Composable
 fun DemoRow(action: DemoAction) {
+    var executionResult by remember { mutableStateOf<Boolean?>(null) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = action.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = action.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Text(
-                    text = action.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    Text(
+                        text = action.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            executionResult = runCatching {
+                                action.onExecute()
+                            }.getOrElse { false }
+                        }
+                    }
+                ) {
+                    Text(text = "Execute")
+                }
             }
 
+            // Not good solution, but works well enough
+            AnimatedVisibility(
+                visible = executionResult != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                executionResult?.let { success ->
+                    val statusColor = if (success) Green else Red
+                    val icon = if (success) Icons.Default.Check else Icons.Default.Close
+                    val message = if (success) "Action Successful" else "Action Failed"
 
-            Button(onClick = action.onExecute) {
-                Text(text = "Execute")
+                    Row(
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(color = statusColor, shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = statusColor,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
         }
     }

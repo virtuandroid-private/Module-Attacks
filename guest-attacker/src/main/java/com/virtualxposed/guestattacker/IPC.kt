@@ -42,7 +42,6 @@ object IPC {
             override fun onServiceConnected(
                 name: ComponentName?, service: IBinder?
             ) {
-//                val serviceBinder = IBinderDelegateService.Stub.asInterface(service).service
                 privateService = IPrivateService.Stub.asInterface(service)
                 sendMessage(context)
             }

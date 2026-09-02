@@ -81,7 +81,7 @@ object Utils {
             val field: Field = Throwable::class.java.getDeclaredField("backtrace")
             field.isAccessible = true
 
-            val backtrace = field.get(throwable) as? Array<Any>
+            val backtrace = field.get(throwable) as? Array<*>
             backtrace?.filterIsInstance<Class<*>>()
         } catch (e: Exception) {
             e.printStackTrace()

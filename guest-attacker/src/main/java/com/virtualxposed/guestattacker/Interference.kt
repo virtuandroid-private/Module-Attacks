@@ -10,7 +10,7 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 object Interference {
-    suspend fun killVictim(context: Context) {
+    suspend fun killVictim(context: Context): Boolean {
         val activityManager =
             context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val victimProcesses =
@@ -18,7 +18,7 @@ object Interference {
 
         if (victimProcesses.isEmpty()) {
             toast(context, "No victim process")
-            return
+            return false
         }
 
         victimProcesses.forEach { targetProcess ->
@@ -38,8 +38,10 @@ object Interference {
                 context,
                 "Killed $difference/${victimProcesses.size} victim processes"
             )
+            return true
         } else {
             toast(context, "Failed to kill the victim process")
+            return false
         }
     }
 }

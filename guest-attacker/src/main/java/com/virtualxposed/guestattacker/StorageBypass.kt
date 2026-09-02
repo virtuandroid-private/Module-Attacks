@@ -14,20 +14,23 @@ object StorageBypass {
     const val VICTIM_APP = "com.virtualxposed.victim"
     const val HOST_APP = "io.va.exposed64"
 
+    const val EXPECTED_FILE_RESULTS = "This is the contents of the private file."
+
     @SuppressLint("SdCardPath")
     val victimFile =
         File("/data/data/io.va.exposed64/virtual/data/user/0/com.virtualxposed.victim/files/private-file")
 
-    fun shellBypass(context: Context) {
+    fun shellBypass(context: Context): Boolean {
         val results = executeShellCommand("cat ${victimFile.absolutePath}")
         log("Private file results: $results")
         toast(
             context,
             "Private file results: $results",
         )
+        return results == EXPECTED_FILE_RESULTS
     }
 
-    fun fdBypass(context: Context) {
+    fun fdBypass(context: Context): Boolean {
         val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
         val procInfos = activityManager.runningAppProcesses
 
@@ -46,7 +49,9 @@ object StorageBypass {
                         context,
                         "Private file results: $result",
                     )
-                    return@firstOrNull true
+                    if (result == EXPECTED_FILE_RESULTS) {
+                        return true
+                    }
                 }
             }
             false
@@ -58,5 +63,6 @@ object StorageBypass {
                 )
             }
         }
+        return false
     }
 }
