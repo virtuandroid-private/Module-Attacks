@@ -68,5 +68,5 @@ The majority of app actions uses various VirtualXposed vulnerabilities to read a
 
 Before executing the attacks it is recommended to start the victim app manually, to have it running in the background. This is required for some attacks, such as the attack which reads open file descriptors from the Victim app process.
 
-<img src="github/resources/Guest-Attacks-Demo.png" alt="Guest attacks" style="max-width:200px;width:30%">
+<img src=".github/resources/Guest-Attacks-Demo.png" alt="Guest attacks" style="max-width:200px;width:30%">
 
