@@ -139,12 +139,8 @@ val encryptPluginApk = tasks.register<EncryptFileTask>("encryptPluginApk") {
         .map { it.file(BuildConstants.ENCRYPTED_APK_NAME) }
 
     inputFile = copyPluginApk.flatMap { copyTask ->
-        layout.buildDirectory.dir(copyTask.destinationDir.path).map { dir ->
-            dir.asFileTree.matching { include(BuildConstants.NORMAL_APK_NAME) }.singleFile.let {
-                layout.projectDirectory.file(
-                    it.absolutePath
-                )
-            }
+        layout.dir(provider { copyTask.destinationDir }).map { dir ->
+            dir.file(BuildConstants.NORMAL_APK_NAME)
         }
     }
 }
@@ -152,8 +148,7 @@ val encryptPluginApk = tasks.register<EncryptFileTask>("encryptPluginApk") {
 
 // afterEvaluate required due to dynamic task registration
 afterEvaluate {
-    tasks.named("generateDebugAssets") {
-        dependsOn(copyPluginApk)
+    tasks.named("preBuild") {
         dependsOn(encryptPluginApk)
     }
 }
