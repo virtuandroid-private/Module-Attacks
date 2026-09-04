@@ -67,7 +67,9 @@ fun StartScreen(isLoaded: Boolean, modifier: Modifier = Modifier) {
             )
         ) {
             Text(
-                text = "TODO. \n\n" +
+                text = "This app demonstrates dynamic code loading using APK files. " +
+                        "It can be loaded as a module, or by clicking the run buttons below. " +
+                        "It also supports running an encrypted APK file. \n\n" +
                         "Module version ${BuildConfig.VERSION_NAME}\n\n" +
                         "Loaded status: $isLoaded",
                 modifier = Modifier.padding(10.dp)
@@ -75,11 +77,19 @@ fun StartScreen(isLoaded: Boolean, modifier: Modifier = Modifier) {
         }
         Button(onClick = {
             CoroutineScope(Dispatchers.IO).launch {
-                val file = ExecuteHelper.getAssetFile(context) ?: return@launch
+                val file = ExecuteHelper.getAssetFile(context, false) ?: return@launch
                 ExecuteHelper.executeAndroidLibrary(context, file)
             }
         }) {
-            Text("Execute")
+            Text("Run dynamic code from an APK")
+        }
+        Button(onClick = {
+            CoroutineScope(Dispatchers.IO).launch {
+                val file = ExecuteHelper.getAssetFile(context, true) ?: return@launch
+                ExecuteHelper.executeAndroidLibrary(context, file)
+            }
+        }) {
+            Text("Run dynamic code from an encrypted APK")
         }
     }
 }

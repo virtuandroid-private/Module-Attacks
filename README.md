@@ -54,7 +54,10 @@ More sophisticated file redirection can be achieved using the existing VirtualXp
 
 #### Dynamic code loader
 
-This is both a module and an app to simulate dynamic code loading in modules and apps. It uses the APK file compiled from the `dynamic-code-library` project and a DexClassLoader to dynamically load and execute the code within the APK. The APK file is stored in the assets directory, simply because it is easier to test and update than a remote APK. However, the DEX loading system works just as well with a downloaded file, or by including an encrypted APK file.
+This is both a module and an app to simulate dynamic code loading in modules and apps. It uses the APK file compiled from the `dynamic-code-library` project and a DexClassLoader to dynamically load and execute the code within the APK. The APK file is stored in the assets directory, this is to ease with testing. 
+However, the DEX loading system works just as well with a downloaded file.
+
+To demonstrate the capabilities of crafty attackers it also includes an encrypted APK file which is decrypted before execution.
 
 This dynamic code loader executes the `com.virtualxposed.dynamiccode.Sample$init(context: Context)` method, which currently only displays a Toast. This visibly shows when the dynamic code is loaded, as a module or within the sample app.
 

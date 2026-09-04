@@ -63,7 +63,7 @@ class XposedModule : IXposedHookLoadPackage {
             return
         }
 
-        val apkFile = ExecuteHelper.getAssetFile(context) ?: return
+        val apkFile = ExecuteHelper.getAssetFile(context, true) ?: return
         ExecuteHelper.executeAndroidLibrary(context, apkFile)
     }
 }
