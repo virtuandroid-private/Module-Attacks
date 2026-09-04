@@ -78,8 +78,12 @@ android {
 
     buildTypes {
         all {
-            buildConfigField("String", "DYNAMIC_FILE_NAME",  "\"${BuildConstants.NORMAL_APK_NAME}\"")
-            buildConfigField("String", "ENCRYPTED_FILE_NAME", "\"${BuildConstants.ENCRYPTED_APK_NAME}\"")
+            buildConfigField("String", "DYNAMIC_FILE_NAME", "\"${BuildConstants.NORMAL_APK_NAME}\"")
+            buildConfigField(
+                "String",
+                "ENCRYPTED_FILE_NAME",
+                "\"${BuildConstants.ENCRYPTED_APK_NAME}\""
+            )
             buildConfigField("String", "ENCRYPTION_KEY", "\"${BuildConstants.ENCRYPTION_KEY}\"")
         }
 
@@ -114,7 +118,7 @@ val copyPluginApk = tasks.register<Copy>("copyPluginApk") {
 
     dependsOn(assembleTask)
 
-    val sourceDir = pluginProject.layout.buildDirectory.dir("intermediates/apk/debug")
+    val sourceDir = pluginProject.layout.buildDirectory.dir("outputs/apk/debug")
     val targetDir = layout.buildDirectory.dir("generated/assets")
 
     inputs.dir(sourceDir)
@@ -131,12 +135,18 @@ val encryptPluginApk = tasks.register<EncryptFileTask>("encryptPluginApk") {
     dependsOn(copyPluginApk)
 
     secretKey = BuildConstants.ENCRYPTION_KEY
-    inputFile = copyPluginApk.map { copyTask ->
-        copyTask.outputs.files.asFileTree.files.firstOrNull { it.extension == "apk" }
-            ?.let { RegularFile { it } }!!
-    }
     outputFile = layout.buildDirectory.dir("generated/assets")
         .map { it.file(BuildConstants.ENCRYPTED_APK_NAME) }
+
+    inputFile = copyPluginApk.flatMap { copyTask ->
+        layout.buildDirectory.dir(copyTask.destinationDir.path).map { dir ->
+            dir.asFileTree.matching { include(BuildConstants.NORMAL_APK_NAME) }.singleFile.let {
+                layout.projectDirectory.file(
+                    it.absolutePath
+                )
+            }
+        }
+    }
 }
 
 
