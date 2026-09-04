@@ -13,20 +13,29 @@ import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.Utils.log
 import com.virtualxposed.guestattacker.Utils.toast
 import com.virtualxposed.victim.IPrivateService
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 
 object IPC {
-    var privateService: IPrivateService? = null
+    private val privateService = MutableStateFlow<IPrivateService?>(null)
 
-    fun sendMessage(context: Context) {
-        val responseMessage = privateService?.sendMessage("Attack message!")
-        toast(context, "Got response from Victim app: $responseMessage")
+    fun sendMessage(context: Context): Boolean {
+        val responseMessage = privateService.value?.sendMessage("Attack message!")
+        if (responseMessage == null) {
+            toast(context, "No response from Victim app.")
+        } else {
+            toast(context, "Got response from Victim app: $responseMessage")
+        }
+        return responseMessage != null
     }
 
-    fun messageVictimApp(context: Context) {
+    suspend fun messageVictimApp(context: Context): Boolean {
         val service = privateService
-        if (service != null) {
-            sendMessage(context)
-            return
+        if (service.value != null) {
+            return sendMessage(context)
         }
 
         val intent = Intent().apply {
@@ -42,8 +51,7 @@ object IPC {
             override fun onServiceConnected(
                 name: ComponentName?, service: IBinder?
             ) {
-                privateService = IPrivateService.Stub.asInterface(service)
-                sendMessage(context)
+                privateService.value = IPrivateService.Stub.asInterface(service)
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
@@ -56,12 +64,20 @@ object IPC {
             )
             if (iServiceConnection == null) {
                 log("No iServiceConnection")
-                return
+                toast(context, "Unable to connect to Victim app. Is it installed?")
+                return false
             }
             bindServiceIntended(
                 context, intent, iServiceConnection, BIND_AUTO_CREATE, 0
             )
         }
+
+        // Wait for 10 seconds to start the service
+        withTimeoutOrNull(10.seconds) {
+            service.filterNotNull().first()
+        }
+
+        return sendMessage(context)
     }
 
 

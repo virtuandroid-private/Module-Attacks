@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,27 +43,28 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import com.virtualxposed.guestattacker.StorageBypass.EXPECTED_FILE_RESULTS
 import com.virtualxposed.guestattacker.StorageBypass.HOST_APP
 import com.virtualxposed.guestattacker.StorageBypass.VICTIM_APP
 import com.virtualxposed.guestattacker.StorageBypass.victimFile
 import com.virtualxposed.guestattacker.Utils.toast
 import com.virtualxposed.guestattacker.ui.theme.AttacksTheme
+import com.virtualxposed.guestattacker.ui.theme.Green
+import com.virtualxposed.guestattacker.ui.theme.Red
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import com.virtualxposed.guestattacker.StorageBypass.EXPECTED_FILE_RESULTS
-import com.virtualxposed.guestattacker.ui.theme.Green
-import com.virtualxposed.guestattacker.ui.theme.Red
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -200,7 +202,6 @@ class MainActivity : ComponentActivity() {
                             DemoCategory.IPC
                         ) {
                             IPC.messageVictimApp(this)
-                            true
                         }, DemoAction(
                             "Bypass receiver verification",
                             "VirtualXposed registers all receivers as exported static broadcast receivers, with no caller verification. " +
@@ -235,9 +236,9 @@ enum class DemoCategory(val categoryName: String) {
     IO("Improper storage isolation"),
     MissingHook("Missing hook abuse"),
     Interference("Cross-app interference"),
-    SharedProcess("Shared process vulnerabilities"),
-    SharedContext("Shared context vulnerabilities"),
-    IPC("IPC vulnerabilities"),
+    SharedProcess("Shared process abuse"),
+    SharedContext("Shared context abuse"),
+    IPC("IPC abuse"),
 }
 
 data class DemoAction(
@@ -312,6 +313,7 @@ fun CategoryHeader(
 @Composable
 fun DemoRow(action: DemoAction) {
     var executionResult by remember { mutableStateOf<Boolean?>(null) }
+    var isExecuting by remember { mutableStateOf<Boolean>(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -350,14 +352,34 @@ fun DemoRow(action: DemoAction) {
 
                 Button(
                     onClick = {
+                        isExecuting = true
                         CoroutineScope(Dispatchers.IO).launch {
                             executionResult = runCatching {
                                 action.onExecute()
-                            }.getOrElse { false }
+                            }.onFailure { t ->
+                                t.printStackTrace()
+                            }.getOrElse {
+                                false
+                            }
+                            isExecuting = false
+                        }
+                    },
+                    enabled = !isExecuting
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        // Cheat to make the button stay consistent in width
+                        Text(
+                            text = "Execute",
+                            modifier = Modifier.alpha(if (isExecuting) 0f else 1f)
+                        )
+                        if (isExecuting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                strokeWidth = 2.dp
+                            )
                         }
                     }
-                ) {
-                    Text(text = "Execute")
                 }
             }
 
