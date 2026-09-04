@@ -10,6 +10,7 @@ object BuildConstants {
     const val LIBRARY_PROJECT = ":dynamic-code-library"
     const val NORMAL_APK_NAME = "dynamic.apk"
     const val ENCRYPTED_APK_NAME = "encrypted.apk"
+    const val SO_FILE_NAME = "libdynamic.so"
 }
 
 plugins {
@@ -85,6 +86,7 @@ android {
                 "\"${BuildConstants.ENCRYPTED_APK_NAME}\""
             )
             buildConfigField("String", "ENCRYPTION_KEY", "\"${BuildConstants.ENCRYPTION_KEY}\"")
+            buildConfigField("String", "SO_FILE_NAME", "\"${BuildConstants.SO_FILE_NAME}\"")
         }
 
         release {
@@ -105,8 +107,12 @@ android {
     sourceSets {
         getByName("main") {
             // Include the directory where the built APK will reside
-            assets.directories.add(
-                layout.buildDirectory.dir("generated/assets").get().asFile.absolutePath
+            assets.directories.addAll(
+                listOf(
+                    // Different dirs to make Gradle happy, otherwise they generate implicit dependencies
+                    layout.buildDirectory.dir("generated/apk-assets").get().asFile.absolutePath,
+                    layout.buildDirectory.dir("generated/so-assets").get().asFile.absolutePath
+                )
             )
         }
     }
@@ -114,28 +120,58 @@ android {
 
 val copyPluginApk = tasks.register<Copy>("copyPluginApk") {
     val pluginProject = project(BuildConstants.LIBRARY_PROJECT)
-    val assembleTask = pluginProject.tasks.named("build")
+    val assembleTask = pluginProject.tasks.named("assembleDebug")
 
     dependsOn(assembleTask)
 
-    val sourceDir = pluginProject.layout.buildDirectory.dir("outputs/apk/debug")
-    val targetDir = layout.buildDirectory.dir("generated/assets")
+    // The apk can be found in either of these
+    val sourceDirs = arrayOf(
+        pluginProject.layout.buildDirectory.dir("intermediates/apk/debug"),
+        pluginProject.layout.buildDirectory.dir("outputs/apk/debug")
+    )
 
-    inputs.dir(sourceDir)
-    outputs.dir(targetDir)
-
-    from(sourceDir) {
+    from(sourceDirs) {
         include("*.apk")
         rename { BuildConstants.NORMAL_APK_NAME }
     }
-    into(targetDir)
+
+    into(layout.buildDirectory.dir("generated/apk-assets"))
 }
+
+val copyPluginNativeCode = tasks.register<Copy>("copyPluginNativeCode") {
+    val pluginProject = project(BuildConstants.LIBRARY_PROJECT)
+    val assembleTask = pluginProject.tasks.named("mergeDebugNativeLibs")
+
+    dependsOn(assembleTask)
+
+    val sourceDir =
+        pluginProject.layout.buildDirectory.dir("intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib")
+    val targetDir = layout.buildDirectory.dir("generated/so-assets")
+
+    from(sourceDir) {
+        include("**/${BuildConstants.SO_FILE_NAME}")
+
+        eachFile {
+            // Extracts the parent folder name (e.g., "x86", "arm64-v8a")
+            val arch = file.parentFile.name
+            // Renames "libdynamic.so" -> "x86_libdynamic.so"
+            name = "${arch}_$name"
+            // Flattens the output into targetDir instead of keeping the subfolder structure
+            path = name
+        }
+    }
+    into(targetDir)
+
+    // Disables empty directory preservation since files are flattened to root targetDir
+    includeEmptyDirs = false
+}
+
 
 val encryptPluginApk = tasks.register<EncryptFileTask>("encryptPluginApk") {
     dependsOn(copyPluginApk)
 
     secretKey = BuildConstants.ENCRYPTION_KEY
-    outputFile = layout.buildDirectory.dir("generated/assets")
+    outputFile = layout.buildDirectory.dir("generated/apk-assets")
         .map { it.file(BuildConstants.ENCRYPTED_APK_NAME) }
 
     inputFile = copyPluginApk.flatMap { copyTask ->
@@ -150,6 +186,7 @@ val encryptPluginApk = tasks.register<EncryptFileTask>("encryptPluginApk") {
 afterEvaluate {
     tasks.named("preBuild") {
         dependsOn(encryptPluginApk)
+        dependsOn(copyPluginNativeCode)
     }
 }
 

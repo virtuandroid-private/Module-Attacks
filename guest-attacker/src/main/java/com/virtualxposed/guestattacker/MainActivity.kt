@@ -313,7 +313,7 @@ fun CategoryHeader(
 @Composable
 fun DemoRow(action: DemoAction) {
     var executionResult by remember { mutableStateOf<Boolean?>(null) }
-    var isExecuting by remember { mutableStateOf<Boolean>(false) }
+    var isExecuting by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
