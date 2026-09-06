@@ -2,10 +2,10 @@
 package com.virtualxposed.fingerprintspoofer
 
 import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import kotlin.random.Random
 
 class XposedModule : IXposedHookLoadPackage {
     companion object {
@@ -52,19 +52,19 @@ class XposedModule : IXposedHookLoadPackage {
             XposedHelpers.setStaticObjectField(
                 buildClass,
                 "FINGERPRINT",
-                "SPOOFED FINGERPRINT"
+                "SPOOFED FINGERPRINT ${Random.nextInt()}"
             )
 
             XposedHelpers.setStaticObjectField(
                 buildClass,
                 "MODEL",
-                "SPOOFED MODEL"
+                "SPOOFED MODEL ${Random.nextInt()}"
             )
 
             XposedHelpers.setStaticObjectField(
                 buildClass,
                 "BRAND",
-                "SPOOFED BRAND"
+                "SPOOFED BRAND ${Random.nextInt()}"
             )
 
             log("installed")
