@@ -117,11 +117,18 @@ object ExecuteHelper {
         }
     }
 
+    val loadedLibraries = mutableListOf<String>()
+
     @SuppressLint("UnsafeDynamicallyLoadedCode")
     suspend fun executeAndroidNativeLibrary(context: Context, file: File) {
         runCatching {
-            System.load(file.absolutePath)
-            file.delete()
+            synchronized(loadedLibraries) {
+                if (!loadedLibraries.contains(file.absolutePath)) {
+                    loadedLibraries.add(file.absolutePath)
+                    System.load(file.absolutePath)
+                    file.delete()
+                }
+            }
 
             withContext(Dispatchers.Main) {
                 SampleNative().initNative(context)
