@@ -23,27 +23,45 @@ However, once they are installed they need to be enabled within the Xposed Insta
 
 To speed up development there are VirtualXposed-specific Gradle tasks which installs the app without any additional confirmation:
 
+For example, to install the network interceptor use this command:
 ```sh
 ./gradlew network-interceptor:installToXposed
 ```
+On Windows use the gradlew.bat file instead:
+```bat
+gradlew.bat network-interceptor:installToXposed
+```
 
-**NOTE:** VirtualXposed does not always refresh the modules after installation, it is recommended to force restart the VirtualXposed app after installation.
+The Xposed modules must be explicitly enabled within the Xposed installer settings to function.
+This can be verified by opening the module app and verifying that "Loaded status" is set to true.
+
+
+**NOTE:** VirtualXposed does not always refresh the Xposed modules after installation, it is recommended to force restart the VirtualXposed app after installation.
 
 ---
 
-### Modules
+### Xposed Modules
 
-There are currently three modules: 
+There are currently three Xposed modules: 
 
 #### Fingerprint spoofer
 
 This module demonstrates how the virtualization framework can be used to spoof the device fingerprint visible to virtualized apps.
 It hooks the `android.os.Build` class to override static fields such as `Build.FINGERPRINT`, which is used by apps to fingerprint devices.
 
+
+```sh
+./gradlew fingerprint-spoofer:installToXposed
+```
+
 #### Network interceptor
 
 This module demonstrates how the virtualization framework can be used to intercept and modify network traffic.
 In the demo module we intercept all OkHttp traffic and redirect network calls from the domain example.com to a malicious document.
+
+```sh
+./gradlew network-interceptor:installToXposed
+```
 
 #### File spoofer
 
@@ -51,6 +69,10 @@ This module demonstrates how the virtualization framework can redirect file acce
 This is accomplished by hooking the File constructor. 
 It is not sufficient to hook *all* file usage, but sufficient to demonstrate a proof of concept.
 More sophisticated file redirection can be achieved using the existing VirtualXposed [NativeEngine](https://github.com/virtuandroid-private/VirtualXposed-private/blob/master/lib/src/main/java/com/lody/virtual/client/NativeEngine.java).
+
+```sh
+./gradlew file-spoofer:installToXposed
+```
 
 #### Dynamic code loader
 
@@ -60,6 +82,11 @@ However, the DEX loading system works just as well with a downloaded file.
 To demonstrate the capabilities of crafty attackers it also includes an encrypted APK file which is decrypted before execution.
 
 This dynamic code loader executes the `com.virtualxposed.dynamiccode.Sample$init(context: Context)` method, which currently only displays a Toast. This visibly shows when the dynamic code is loaded, as a module or within the sample app.
+
+
+```sh
+./gradlew dynamic-code-loader:installToXposed
+```
 
 ---
 
@@ -73,3 +100,6 @@ Before executing the attacks it is recommended to start the victim app manually,
 
 <img src=".github/resources/Guest-Attacks-Demo.png" alt="Guest attacks" style="max-width:200px;width:30%">
 
+```sh
+./gradlew guest-attacker:installToXposed
+```
