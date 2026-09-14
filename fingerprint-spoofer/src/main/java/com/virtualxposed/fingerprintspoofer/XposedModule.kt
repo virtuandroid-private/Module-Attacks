@@ -39,7 +39,7 @@ class XposedModule : IXposedHookLoadPackage {
 
         log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
 
-        hookFingerprint(params)
+        hookFingerprint(params ?: return)
     }
 
     fun hookFingerprint(params: XC_LoadPackage.LoadPackageParam) {
