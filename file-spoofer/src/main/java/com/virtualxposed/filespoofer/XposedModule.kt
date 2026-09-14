@@ -1,6 +1,7 @@
 @file:JvmName("XposedModule") // Prevent kotlin from renaming the file
 package com.virtualxposed.filespoofer
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import de.robv.android.xposed.IXposedHookLoadPackage
@@ -37,6 +38,7 @@ class XposedModule : IXposedHookLoadPackage {
     }
 
 
+    @SuppressLint("SdCardPath")
     override fun handleLoadPackage(params: XC_LoadPackage.LoadPackageParam?) {
         if (params?.packageName == BuildConfig.APPLICATION_ID) {
             log("Self-loaded module with version ${BuildConfig.VERSION_NAME}")
@@ -67,8 +69,11 @@ class XposedModule : IXposedHookLoadPackage {
             return
         }
 
-
-        val customFile = File(context.filesDir, "malicious.txt")
+        // /data/user/0/io.va.exposed64/virtual/data/user/0/com.virtualxposed.victim/files/malicious.txt
+        val customFile = File("${params.appInfo.dataDir}/files", "malicious.txt")
+        customFile.delete()
+        customFile.parentFile?.mkdirs()
+        customFile.createNewFile()
         customFile.writeText("This is a malicious file")
         val customFilePath = customFile.absolutePath
 
@@ -92,7 +97,7 @@ class XposedModule : IXposedHookLoadPackage {
                         return
                     }
 
-                    log("Redirecting $originalPath -> $customFilePath")
+                    log("Redirecting 1 $originalPath -> $customFilePath")
                     param.args[0] = customFilePath
                 }
             }
@@ -114,7 +119,7 @@ class XposedModule : IXposedHookLoadPackage {
                         return
                     }
 
-                    log("Redirecting ${file?.absolutePath}/$name -> $customFilePath")
+                    log("Redirecting 2 ${file?.absolutePath}/$name -> $customFilePath")
                     param.args[0] = customFile.parentFile
                     param.args[1] = customFile.name
                 }
