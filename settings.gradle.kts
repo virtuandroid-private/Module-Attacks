@@ -35,4 +35,5 @@ include(":network-interceptor")
 include(":guest-attacker")
 include(":dynamic-code-loader")
 include(":dynamic-code-library")
+include(":session-cloner")
 rootProject.name = "attacks"

@@ -1,0 +1,78 @@
+package com.virtualxposed.sessioncloner
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.virtualxposed.fingerprintspoofer.ui.theme.MaliciousModuleTheme
+
+class MainActivity : ComponentActivity() {
+    companion object {
+        var isLoaded = false
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        val isLoaded = isLoaded
+
+        setContent {
+            MaliciousModuleTheme {
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    StartScreen(isLoaded, modifier = Modifier.padding(innerPadding))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StartScreen(isLoaded: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+        Text(
+            text = "Session cloning module",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp), colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+
+            Text(
+                text = "This module copies sessions from the first user to other users. To test this create another copy of the victim app and open it with this module enabled. It will copy the account ID from the first victim app to the new victim app. \n\n" +
+                        "Module version ${BuildConfig.VERSION_NAME}\n\n" +
+                        "Loaded status: $isLoaded",
+                modifier = Modifier.padding(10.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StartScreenPreview() {
+    MaliciousModuleTheme {
+        StartScreen(false)
+    }
+}

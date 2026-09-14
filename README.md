@@ -88,6 +88,30 @@ This dynamic code loader executes the `com.virtualxposed.dynamiccode.Sample$init
 ./gradlew dynamic-code-loader:installToXposed
 ```
 
+### Session cloner
+
+This module clones all app data, which lets you clone sessions between virtualized apps. 
+To test this module you need an app installed twice within VirtualXposed.
+
+To clone apps within VirtualXposed follow these steps:
+
+1. Long press the launcher
+2. Click launcher settings
+3. Click "Add app"
+4. Select the app to be cloned
+5. Click "Install another one"
+6. Click "Done"
+7. Open "[2] *Cloned app name*"
+8. Observe the popup "Copying account data"
+9. The cloned app will now launch with the exact same data as the original app
+
+This is best demonstrated within the Victim app which contains a field: "Unique persistent account ID"
+which will be identical between cloned instances if this module works.
+
+```sh
+./gradlew session-cloner:installToXposed
+```
+
 ---
 
 ### Guest attacker
