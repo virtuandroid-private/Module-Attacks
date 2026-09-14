@@ -50,12 +50,13 @@ class XposedModule : IXposedHookLoadPackage {
             )
             return
         }
-        if (params?.packageName != VICTIM_APP) {
-            log("Not loading module $TAG since ${params?.packageName} is not $VICTIM_APP")
-            return
-        }
 
-        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params.packageName}")
+//        if (params?.packageName != VICTIM_APP) {
+//            log("Not loading module $TAG since ${params?.packageName} is not $VICTIM_APP")
+//            return
+//        }
+
+        log("Loaded malicious module $TAG version ${BuildConfig.VERSION_NAME} to package: ${params?.packageName}")
 
         val context = getApplicationContext()
         if (context == null) {
