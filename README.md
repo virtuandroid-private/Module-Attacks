@@ -6,7 +6,7 @@
 
 ### Introduction
 
-This repository contains all attack modules used when evaluating the [VirtualXposed](https://github.com/virtuandroid-private/VirtualXposed-private) implementation.
+This repository contains all attack modules used when evaluating the [VirtualXposed](https://github.com/virtuandroid/VirtualXposed) implementation.
 These modules are structured as Legacy Xposed modules written in Kotlin. 
 This means that the modules are structured as regular Android apps, with extra metadata to detail how the apps are initialized as Xposed modules.
 
@@ -68,7 +68,7 @@ In the demo module we intercept all OkHttp traffic and redirect network calls fr
 This module demonstrates how the virtualization framework can redirect file access. 
 This is accomplished by hooking the File constructor. 
 It is not sufficient to hook *all* file usage, but sufficient to demonstrate a proof of concept.
-More sophisticated file redirection can be achieved using the existing VirtualXposed [NativeEngine](https://github.com/virtuandroid-private/VirtualXposed-private/blob/master/lib/src/main/java/com/lody/virtual/client/NativeEngine.java).
+More sophisticated file redirection can be achieved using the existing VirtualXposed [NativeEngine](https://github.com/virtuandroid/VirtualXposed/blob/master/lib/src/main/java/com/lody/virtual/client/NativeEngine.java).
 
 ```sh
 ./gradlew file-spoofer:installToXposed
@@ -116,7 +116,7 @@ which will be identical between cloned instances if this module works.
 
 ### Guest attacker
 
-This repository contains a guest attacker application. This app contains 9 different attacks on other guest apps. It is pre-programmed to only attack the [Victim App](https://github.com/virtuandroid-private/Victim-app-private). Each attack can be executed by pressing a button within the app, and it will display a small popup if the action fails or succeeds. 
+This repository contains a guest attacker application. This app contains 9 different attacks on other guest apps. It is pre-programmed to only attack the [Victim App](https://github.com/virtuandroid/Victim-app). Each attack can be executed by pressing a button within the app, and it will display a small popup if the action fails or succeeds. 
 
 The majority of app actions uses various VirtualXposed vulnerabilities to read a private file stored in the victim app private data directory. For example, one action uses [ptrace](https://en.wikipedia.org/wiki/Ptrace) to bypass the IO sandbox by reading the private file as the host process.
 
