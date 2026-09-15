@@ -249,6 +249,14 @@ class MainActivity : ComponentActivity() {
                             } catch (_: Throwable) {
                                 return@DemoAction false
                             }
+                        },
+                        DemoAction(
+                            "WebView hijacking",
+                            "When WebView debugging is enabled it becomes possible to use the private debugging socket between guest processes. " +
+                                    "This makes it possible to view and alter all WebView content. This function alters the HTML content to display a hijack message.",
+                            DemoCategory.DangerousComposition
+                        ) {
+                            WebviewHijack.hijack(this)
                         }
                     )
                 )
@@ -264,6 +272,7 @@ enum class DemoCategory(val categoryName: String) {
     SharedProcess("Shared process abuse"),
     SharedContext("Shared context abuse"),
     IPC("IPC abuse"),
+    DangerousComposition("Dangerous composition"),
 }
 
 data class DemoAction(
